@@ -1,0 +1,20 @@
+{
+  "state": "A customer sent this message to AnyCompany Invoicing support:\n\nI was charged twice for my subscription this month.",
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "Which team should handle this message?",
+      "criteria": {
+        "billing": "Charges, refunds, invoices from us, payment methods, plan prices already paid",
+        "technical": "Bugs, errors, outages, integrations, API problems, wrong calculations",
+        "sales": "New plans, pricing quotes, demos, trials, partnerships, buying more",
+        "account": "Logins, users, permissions, 2FA, workspace and data settings",
+        "unknown": "A general question that is not about AnyCompany Invoicing at all"
+      }
+    },
+    "in_scope": {
+      "type": "noul",
+      "instructions": "Is this message about the AnyCompany Invoicing product or account?"
+    }
+  }
+}

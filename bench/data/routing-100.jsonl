@@ -1,0 +1,100 @@
+{"id": "r000", "text": "Is card payment or direct debit better for my business?", "route": "unknown", "in_scope": false, "hard": true}
+{"id": "r001", "text": "Hello team, Emails to clients are landing in spam Cheers", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r002", "text": "Urgent: Invoices won't export to PDF, I just get a blank page Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r003", "text": "Urgent: CSV import fails at row 214 with no error message Cheers", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r004", "text": "Hello team, Rate limit errors when we sync more than 100 invoices Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r005", "text": "Quick question: Tax is calculated wrongly on invoices for Irish customers Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r006", "text": "Hi, How do I reset 2FA after losing my phone? Please help.", "route": "account", "in_scope": true, "hard": false}
+{"id": "r007", "text": "What is the capital of Australia? Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r008", "text": "Is SSO available, and if so why can't I log in with my work account?", "route": "account", "in_scope": true, "hard": true}
+{"id": "r009", "text": "Hi, We're comparing you with two other tools, can someone call me? Please help.", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r010", "text": "We added 10 users and now the app is slow and the bill doubled", "route": "billing", "in_scope": true, "hard": true}
+{"id": "r011", "text": "The accounting software integration duplicates every customer Cheers", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r012", "text": "Quick question: The mobile app crashes when I open the reports tab", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r013", "text": "Hi, The invite link for a new teammate has expired Thanks.", "route": "account", "in_scope": true, "hard": false}
+{"id": "r014", "text": "The receipt shows the wrong company name Thanks.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r015", "text": "Hey - We're a 300-person company, do you offer enterprise pricing? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r016", "text": "Quick question: Do you have case studies from construction companies? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r017", "text": "Hey - Can we get a custom contract with our own terms?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r018", "text": "Hello team, Write me a poem about invoices Can someone look at this today?", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r019", "text": "Quick question: Is there a discount for charities?", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r020", "text": "Hi, My printer is jammed Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r021", "text": "Hey - Can you help me fix my spreadsheet formula for a lookup? Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r022", "text": "Reports show revenue in the wrong currency", "route": "technical", "in_scope": true, "hard": true}
+{"id": "r023", "text": "My card was declined when renewing, how do I update it? Cheers", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r024", "text": "My card was charged but the account still says trial", "route": "billing", "in_scope": true, "hard": true}
+{"id": "r025", "text": "Quick question: Can I talk to someone about migrating from our current provider? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r026", "text": "Hello team, How do I delete my account and all our data? Thanks.", "route": "account", "in_scope": true, "hard": false}
+{"id": "r027", "text": "Why does my bank say the payment from my client failed?", "route": "unknown", "in_scope": false, "hard": true}
+{"id": "r028", "text": "Urgent: Where do I change my notification settings? Cheers", "route": "account", "in_scope": true, "hard": false}
+{"id": "r029", "text": "Hi, Why was I charged in dollars instead of pounds? Please help.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r030", "text": "Hey - Please remove access for an employee who left Cheers", "route": "account", "in_scope": true, "hard": false}
+{"id": "r031", "text": "Hi, Do you offer multi-entity support on any plan? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r032", "text": "Hey - I can't log in, it says my password is wrong", "route": "account", "in_scope": true, "hard": false}
+{"id": "r033", "text": "Urgent: What's the difference between the Growth and Scale plans? Please help.", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r034", "text": "Quick question: I want to give our accountant read-only access", "route": "account", "in_scope": true, "hard": false}
+{"id": "r035", "text": "Urgent: Can I get a refund for the annual plan I bought yesterday?", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r036", "text": "Hi, Custom fields disappear after I save the template Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r037", "text": "Urgent: Our finance team wants all subscription invoices sent to a different email", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r038", "text": "Quick question: Do you sell in the US as well as the UK? Cheers", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r039", "text": "Can you invoice my client for me, they owe me 2,000 pounds?", "route": "unknown", "in_scope": false, "hard": true}
+{"id": "r040", "text": "Quick question: The dashboard is really slow to load today Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r041", "text": "Urgent: Can you recommend a good accountant in Leeds? Cheers", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r042", "text": "Hey - Two-factor codes aren't arriving on my phone Please help.", "route": "account", "in_scope": true, "hard": false}
+{"id": "r043", "text": "Quick question: How do I switch from monthly to annual billing? Thanks.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r044", "text": "Hi, Someone else in my company created an account, can we merge them? Can someone look at this today?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r045", "text": "Urgent: Can I rename our organisation? Can someone look at this today?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r046", "text": "I can't log in to pay my overdue invoice", "route": "account", "in_scope": true, "hard": true}
+{"id": "r047", "text": "Urgent: Payment links in emails go to a 404 page Please help.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r048", "text": "Urgent: Is there a status page? Everything is timing out Please help.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r049", "text": "Our invoices show the wrong VAT rate and now my bill from you is wrong too", "route": "technical", "in_scope": true, "hard": true}
+{"id": "r050", "text": "Quick question: Who won the football last night? Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r051", "text": "Urgent: The invoice numbering skipped from 1043 to 1050 Cheers", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r052", "text": "Quick question: I can't upload our logo, it says file type not supported Thanks.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r053", "text": "Hello team, Can I get a demo for my finance team next week? Cheers", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r054", "text": "Webhook events for paid invoices are arriving twice Cheers", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r055", "text": "I need help writing payment terms for my contract", "route": "unknown", "in_scope": false, "hard": true}
+{"id": "r056", "text": "Can the API create invoices in bulk, and what plan do I need for that?", "route": "sales", "in_scope": true, "hard": true}
+{"id": "r057", "text": "I need a credit note for the duplicate charge on 3 September Cheers", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r058", "text": "Translate this paragraph into French Can someone look at this today?", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r059", "text": "Do you have a partner programme for accountants?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r060", "text": "Does your platform work for invoicing in Ireland and the UK at the same time?", "route": "sales", "in_scope": true, "hard": true}
+{"id": "r061", "text": "Hey - I'm locked out after too many attempts Can someone look at this today?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r062", "text": "Quick question: Please send me a VAT invoice for last quarter's subscription", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r063", "text": "Why did my bill go up from 49 to 79 pounds? Please help.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r064", "text": "Hello team, I'd like a quote for adding the payroll add-on Please help.", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r065", "text": "Hi, I was billed for 12 seats but we only have 9 users Cheers", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r066", "text": "Quick question: The API returns 500 when I create an invoice with a discount line", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r067", "text": "Hello team, I was charged twice for my subscription this month Thanks.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r068", "text": "I upgraded to Scale but still can't see multi-entity, was I charged for nothing?", "route": "billing", "in_scope": true, "hard": true}
+{"id": "r069", "text": "How do I export everything to move to another invoicing tool?", "route": "account", "in_scope": true, "hard": true}
+{"id": "r070", "text": "Urgent: What would it cost for 40 users on annual billing?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r071", "text": "Quick question: Can you split our subscription across two cost centres? Can someone look at this today?", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r072", "text": "Quick question: the accounting software sync stopped working since yesterday Please help.", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r073", "text": "Hello team, How do I change the account owner to my colleague? Can someone look at this today?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r074", "text": "Quick question: Our API key returns 401 even though it's new", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r075", "text": "Can I pay by bank transfer instead of card? Thanks.", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r076", "text": "Hello team, Recurring invoices didn't go out this morning", "route": "technical", "in_scope": true, "hard": false}
+{"id": "r077", "text": "Urgent: The direct debit failed and now my account says overdue Can someone look at this today?", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r078", "text": "Can I get a discount if the API outage last week cost us a day?", "route": "billing", "in_scope": true, "hard": true}
+{"id": "r079", "text": "Urgent: We merged two companies, can we combine our workspaces?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r080", "text": "When will the refund show on my statement? Cheers", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r081", "text": "My accountant says your tax calculation is wrong for reverse charge", "route": "technical", "in_scope": true, "hard": true}
+{"id": "r082", "text": "Hello team, Is SSO included in the business plan? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r083", "text": "The accounting software sync broke so we want to cancel and get a refund", "route": "billing", "in_scope": true, "hard": true}
+{"id": "r084", "text": "We want to resell your product to our clients", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r085", "text": "Hello team, How do I file my self assessment tax return? Can someone look at this today?", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r086", "text": "Can I change the email address I sign in with? Can someone look at this today?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r087", "text": "You took payment after I cancelled", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r088", "text": "We were told on a sales call that bulk import was included but it errors out", "route": "technical", "in_scope": true, "hard": true}
+{"id": "r089", "text": "Our new finance director needs access and wants to know the enterprise pricing", "route": "account", "in_scope": true, "hard": true}
+{"id": "r090", "text": "Tell me a joke Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r091", "text": "Urgent: How do I download all our data before we leave?", "route": "account", "in_scope": true, "hard": false}
+{"id": "r092", "text": "The demo account you set up for us has expired, can we extend the trial?", "route": "sales", "in_scope": true, "hard": true}
+{"id": "r093", "text": "Our payment method expired, what happens to the account? Cheers", "route": "billing", "in_scope": true, "hard": false}
+{"id": "r094", "text": "Quick question: Is there a free trial of the Scale plan? Can someone look at this today?", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r095", "text": "Hi, Is it legal to charge late payment interest to a client? Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r096", "text": "Hello team, How much should I charge as a freelance designer? Please help.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r097", "text": "Hey - Are there volume discounts above 1,000 invoices a month? Please help.", "route": "sales", "in_scope": true, "hard": false}
+{"id": "r098", "text": "Hello team, What's the weather like in London tomorrow? Thanks.", "route": "unknown", "in_scope": false, "hard": false}
+{"id": "r099", "text": "How do I add a new user to our workspace? Please help.", "route": "account", "in_scope": true, "hard": false}

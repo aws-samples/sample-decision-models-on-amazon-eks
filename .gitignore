@@ -1,0 +1,4 @@
+config.env
+.kubeconfig*
+results/
+__pycache__/

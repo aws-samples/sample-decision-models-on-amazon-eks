@@ -1,0 +1,24 @@
+# Scale deploy/decider on CPU. A busy pod (16 torch threads, one request at a time) uses about 64-72% of
+# its CPU request and an idle one about 0%, so 50% means "scale while busy" (60% sits inside the HPA's 10%
+# tolerance and scales up about twice as slowly; README).
+# Auto Mode adds nodes when the new pods don't fit. Scale-down is slowed to avoid flapping.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: decider
+  namespace: decider
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: decider}
+  minReplicas: 1
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: 50}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies: [{type: Pods, value: 4, periodSeconds: 15}]
+    scaleDown:
+      stabilizationWindowSeconds: 300

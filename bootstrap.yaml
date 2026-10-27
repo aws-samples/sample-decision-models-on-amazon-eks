@@ -1,0 +1,221 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Strands Decider on EKS quickstart, account bootstrap: a private, versioned S3 bucket (model weights and build
+  source) with access logging, an ECR repository with immutable tags, and an arm64 CodeBuild project that stages
+  the weights and builds the image. One customer managed KMS key encrypts the model bucket, the ECR repository and
+  the build logs.
+Parameters:
+  Name:
+    Type: String
+    Default: strands-decider
+    AllowedPattern: "^[a-z][a-z0-9-]{2,40}$"
+Resources:
+  # Customer managed key for the model bucket, the ECR repository and the CodeBuild log group.
+  SampleKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "${Name} quickstart: model bucket, ECR repository and CodeBuild log encryption"
+      EnableKeyRotation: true
+      PendingWindowInDays: 7
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AccountAdministers
+            Effect: Allow
+            Principal: {AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"}
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: CloudWatchLogsUsesForThisLogGroup
+            Effect: Allow
+            Principal: {Service: !Sub "logs.${AWS::Region}.amazonaws.com"}
+            Action: [kms:Encrypt*, kms:Decrypt*, kms:ReEncrypt*, kms:GenerateDataKey*, kms:Describe*]
+            Resource: "*"
+            Condition:
+              ArnEquals:
+                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${Name}-build"
+      Tags: [{Key: project, Value: !Ref Name}]
+
+  # Receives the model bucket's S3 server access logs.
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_18
+            comment: This bucket is the access-log destination; logging it to itself would loop.
+      cfn_nag:
+        rules_to_suppress:
+          - id: W35
+            reason: This bucket is the access-log destination; logging it to itself would loop.
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ObjectOwnership: BucketOwnerEnforced}]
+      VersioningConfiguration: {Status: Enabled}
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-access-logs
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration: {NoncurrentDays: 1}
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+      Tags: [{Key: project, Value: !Ref Name}]
+  LogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LogBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: S3ServerAccessLogsFromTheModelBucket
+            Effect: Allow
+            Principal: {Service: logging.s3.amazonaws.com}
+            Action: s3:PutObject
+            Resource: !Sub "${LogBucket.Arn}/*"
+            Condition:
+              ArnLike: {"aws:SourceArn": !GetAtt Bucket.Arn}
+              StringEquals: {"aws:SourceAccount": !Ref AWS::AccountId}
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt LogBucket.Arn, !Sub "${LogBucket.Arn}/*"]
+            Condition: {Bool: {"aws:SecureTransport": "false"}}
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # SSE-KMS with the sample's key; the S3 Bucket Key keeps the KMS request count (and cost) low.
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: {SSEAlgorithm: "aws:kms", KMSMasterKeyID: !GetAtt SampleKey.Arn}
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ObjectOwnership: BucketOwnerEnforced}]
+      # Versioned so an overwritten model or build source can be recovered; old versions go after a day.
+      VersioningConfiguration: {Status: Enabled}
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-versions
+            Status: Enabled
+            NoncurrentVersionExpiration: {NoncurrentDays: 1}
+            AbortIncompleteMultipartUpload: {DaysAfterInitiation: 1}
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LogBucket
+        LogFilePrefix: model-bucket/
+      Tags: [{Key: project, Value: !Ref Name}]
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt Bucket.Arn, !Sub "${Bucket.Arn}/*"]
+            Condition: {Bool: {"aws:SecureTransport": "false"}}
+
+  # No fixed name, so CloudFormation can replace it; the scripts read its name and URI from the stack outputs.
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      ImageScanningConfiguration: {ScanOnPush: true}
+      # Every build gets a new tag (quickstart.sh), so a tag always means the same image.
+      ImageTagMutability: IMMUTABLE
+      # Pulls need no KMS permissions: ECR uses grants on the key, which it retires when the repository is deleted.
+      EncryptionConfiguration: {EncryptionType: KMS, KmsKey: !GetAtt SampleKey.Arn}
+      EmptyOnDelete: true
+      Tags: [{Key: project, Value: !Ref Name}]
+  BuildLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${Name}-build"
+      RetentionInDays: 14
+      KmsKeyId: !GetAtt SampleKey.Arn
+  BuildRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: ecr:GetAuthorizationToken does not support resource-level permissions, so it needs Resource "*". Every other statement is scoped.
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: {Service: codebuild.amazonaws.com}
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: {"aws:SourceAccount": !Ref AWS::AccountId}
+      Policies:
+        - PolicyName: build
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "${BuildLogs.Arn}:*"
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:ListBucket, s3:DeleteObject]
+                Resource: [!GetAtt Bucket.Arn, !Sub "${Bucket.Arn}/*"]
+              # Read and write the bucket's SSE-KMS objects, through S3 only.
+              - Effect: Allow
+                Action: [kms:Decrypt, kms:GenerateDataKey]
+                Resource: !GetAtt SampleKey.Arn
+                Condition:
+                  StringEquals: {"kms:ViaService": !Sub "s3.${AWS::Region}.amazonaws.com"}
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action: [ecr:BatchCheckLayerAvailability, ecr:CompleteLayerUpload, ecr:InitiateLayerUpload,
+                         ecr:PutImage, ecr:UploadLayerPart, ecr:BatchGetImage, ecr:GetDownloadUrlForLayer]
+                Resource: !GetAtt Repository.Arn
+      Tags: [{Key: project, Value: !Ref Name}]
+  Build:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${Name}-build"
+      ServiceRole: !GetAtt BuildRole.Arn
+      # The project produces no artifacts; this AWS managed key encrypts anything CodeBuild stores for it.
+      EncryptionKey: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3"
+      Source:
+        Type: S3
+        Location: !Sub "${Bucket}/source/eks.zip"
+        BuildSpec: buildspec.yml
+      Artifacts: {Type: NO_ARTIFACTS}
+      Environment:
+        Type: ARM_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-aarch64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - {Name: REPO_URI, Value: !GetAtt Repository.RepositoryUri}
+          - {Name: BUCKET, Value: !Ref Bucket}
+      LogsConfig:
+        CloudWatchLogs: {Status: ENABLED, GroupName: !Ref BuildLogs}
+      TimeoutInMinutes: 60
+      Tags: [{Key: project, Value: !Ref Name}]
+Outputs:
+  BucketName: {Value: !Ref Bucket}
+  LogBucketName: {Value: !Ref LogBucket}
+  RepositoryUri: {Value: !GetAtt Repository.RepositoryUri}
+  RepositoryName: {Value: !Ref Repository}
+  ProjectName: {Value: !Ref Build}
+  KeyArn: {Value: !GetAtt SampleKey.Arn}

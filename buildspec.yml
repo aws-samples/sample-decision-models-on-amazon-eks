@@ -1,0 +1,25 @@
+# Runs in the quickstart's arm64 CodeBuild project. Two jobs, chosen by JOB:
+#   JOB=weights  download MODEL_ID and BASE_MODEL_ID from the Hugging Face Hub, point the Decider config at
+#                the local base model, upload both folders to s3://$BUCKET/model/ (no laptop download)
+#   JOB=image    build the arm64 image from this folder and push it to $REPO_URI:$IMAGE_TAG
+version: 0.2
+phases:
+  install:
+    commands:
+      - if [ "$JOB" = "weights" ]; then pip3 install -q "huggingface_hub>=0.30"; fi
+  build:
+    commands:
+      - |
+        set -e
+        if [ "$JOB" = "weights" ]; then
+          python3 app/stage_model.py /tmp/model "$MODEL_ID" "$BASE_MODEL_ID"
+          aws s3 sync /tmp/model/ "s3://$BUCKET/model/" --only-show-errors --delete
+          aws s3 ls --recursive --summarize --human-readable "s3://$BUCKET/model/" | tail -2
+        elif [ "$JOB" = "image" ]; then
+          REG=$(echo $REPO_URI | cut -d/ -f1)
+          aws ecr get-login-password | docker login --username AWS --password-stdin $REG
+          docker build --build-arg DECIDER_VERSION=${DECIDER_VERSION:-0.2.0} -t $REPO_URI:${IMAGE_TAG:-latest} .
+          docker push $REPO_URI:${IMAGE_TAG:-latest}
+        else
+          echo "set JOB=weights or JOB=image"; exit 1
+        fi
