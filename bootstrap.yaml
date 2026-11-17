@@ -47,6 +47,9 @@ Resources:
         rules_to_suppress:
           - id: W35
             reason: This bucket is the access-log destination; logging it to itself would loop.
+      guard:
+        SuppressedRules:
+          - S3_BUCKET_LOGGING_ENABLED  # the access-log destination; logging it to itself would loop
     Properties:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
@@ -69,6 +72,11 @@ Resources:
       Tags: [{Key: project, Value: !Ref Name}]
   LogBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Metadata:
+      guard:
+        SuppressedRules:
+          # The DenyInsecureTransport statement below denies non-TLS requests; the rule only matches Resource "*".
+          - S3_BUCKET_SSL_REQUESTS_ONLY
     Properties:
       Bucket: !Ref LogBucket
       PolicyDocument:
@@ -118,6 +126,11 @@ Resources:
       Tags: [{Key: project, Value: !Ref Name}]
   BucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Metadata:
+      guard:
+        SuppressedRules:
+          # The DenyInsecureTransport statement below denies non-TLS requests; the rule only matches Resource "*".
+          - S3_BUCKET_SSL_REQUESTS_ONLY
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
@@ -154,6 +167,10 @@ Resources:
         rules_to_suppress:
           - id: W11
             reason: ecr:GetAuthorizationToken does not support resource-level permissions, so it needs Resource "*". Every other statement is scoped.
+      guard:
+        SuppressedRules:
+          # One role, one policy that lives and dies with it, scoped to this stack's bucket, key, logs and repository.
+          - IAM_NO_INLINE_POLICY_CHECK
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

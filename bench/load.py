@@ -111,10 +111,12 @@ def main():
             print(json.dumps({
                 "label": a.label, "concurrency": c, "requests": len(recs), "ok": len(ok),
                 "req_per_s": round(len(ok) / wall, 3), "wall_s": round(wall, 1),
-                "server_p50_ms": round(st.median(srv)) if srv else None, "server_p95_ms": pct(srv, .95),
+                "server_p50_ms": round(st.median(srv)) if srv else None, "server_p90_ms": pct(srv, .90),
+                "server_p95_ms": pct(srv, .95), "server_p99_ms": pct(srv, .99),
                 "compute_p50_ms": round(st.median([r["compute_ms"] for r in ok if r.get("compute_ms") is not None] or [0])),
                 "queue_p50_ms": round(st.median([r["queue_ms"] for r in ok if r.get("queue_ms") is not None] or [0])),
-                "client_p50_ms": round(st.median(cli)) if cli else None, "client_p95_ms": pct(cli, .95),
+                "client_p50_ms": round(st.median(cli)) if cli else None, "client_p90_ms": pct(cli, .90),
+                "client_p95_ms": pct(cli, .95), "client_p99_ms": pct(cli, .99),
                 "route_acc": round(acc, 3) if acc is not None else None,
                 "hosts": dict(Counter(r.get("host") for r in ok)),
             }), flush=True)

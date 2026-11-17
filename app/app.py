@@ -1,9 +1,11 @@
 """Decision-model server for Amazon EKS: POST /v1/systemone (and /invocations), GET /ping, GET /health.
 
 Startup (once, before the server listens):
-  1. Copy the model and its base model from S3 (WEIGHTS_S3_URI) into MODEL_DIR, an in-memory volume.
-  2. Load the model with strands-decider, on CPU, in bf16 (DECIDER_CPU_DTYPE=bf16, the default here) or
-     in fp32 (fp32-layers).
+  1. Copy the model and its base model from S3 (WEIGHTS_S3_URI) into MODEL_DIR (an in-memory volume on CPU nodes).
+  2. Load the model with strands-decider on DECIDER_DEVICE: cpu (the default; bf16 with DECIDER_CPU_DTYPE=bf16,
+     or fp32 with fp32-layers) or cuda (an NVIDIA GPU, in the checkpoint's bf16).
+  3. Warm up: run each question kind once, with 1 to DECIDER_WARMUP_MAX_QUESTIONS questions, so the first request
+     doesn't pay for Triton compilation (CUDA) or first-call setup.
 Each request returns the package's answers plus server_ms, queue_ms (waiting for this pod's lock),
 compute_ms (the model call) and host (the pod that answered).
 """
@@ -82,25 +84,40 @@ def load():
     from strands_decider import infer
     from strands_decider.infer import load_engine
 
+    device = os.environ.get("DECIDER_DEVICE", "cpu")
     threads = int(os.environ.get("DECIDER_THREADS", "0")) or os.cpu_count()
     torch.set_num_threads(threads)
-    mode = os.environ.get("DECIDER_CPU_DTYPE", "bf16")
-    if mode == "bf16":
+    mode = os.environ.get("DECIDER_CPU_DTYPE", "bf16") if device == "cpu" else "bf16"
+    if device == "cpu" and mode == "bf16":
         # Keep the bf16 weights as they are: on Graviton5 this is about twice as fast as fp32.
         infer.SystemOneEngine._upcast_torso_for_cpu = lambda self: None
-    elif mode == "fp32-layers":
+    elif device == "cpu" and mode == "fp32-layers":
         infer.SystemOneEngine._upcast_torso_for_cpu = _upcast_layers
     t = time.time()
-    log("loading", threads=threads, cpu_dtype=mode)
-    engine = load_engine(os.path.join(MODEL_DIR, "decider"), device="cpu")
+    log("loading", device=device, threads=threads, dtype=mode)
+    engine = load_engine(os.path.join(MODEL_DIR, "decider"), device=device)
     # Report the checkpoint served (MODEL_NAME, set by the Deployment) as `model` in every response.
     engine.cfg.model_name = os.environ.get("MODEL_NAME", engine.cfg.model_name)
-    STATS.update(load_s=round(time.time() - t, 2), threads=threads, cpu_dtype=mode, torch=torch.__version__)
+    STATS.update(load_s=round(time.time() - t, 2), device=device, threads=threads, dtype=mode, torch=torch.__version__)
+    if device.startswith("cuda"):
+        STATS["gpu"] = torch.cuda.get_device_name(0)
     return engine
+
+
+def warm_up(engine) -> None:
+    n = int(os.environ.get("DECIDER_WARMUP_MAX_QUESTIONS", "4"))
+    if n < 1:
+        return
+    from strands_decider.server import warm_up as package_warm_up
+
+    t = time.time()
+    package_warm_up(engine, max_batch=n)
+    STATS["warmup_s"] = round(time.time() - t, 2)
 
 
 stage_weights()
 ENGINE = load()
+warm_up(ENGINE)
 STATS["init_s"] = round(time.time() - STARTED, 2)
 STATS["peak_rss_gb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6, 2)
 log("ready", **STATS)
@@ -110,8 +127,8 @@ from fastapi.responses import JSONResponse  # noqa: E402
 from strands_decider.schema import SystemOneRequest  # noqa: E402
 
 app = FastAPI()
-# Serve one request at a time: each forward already uses all of the pod's threads, so overlapping
-# forwards fight for the same cores. FastAPI runs sync handlers on a thread pool, so without this
+# Serve one request at a time: on CPU each forward already uses all of the pod's threads, so overlapping
+# forwards fight for the same cores. On a GPU, one forward at a time keeps latency predictable. FastAPI runs sync handlers on a thread pool, so without this
 # lock calls overlap.
 LOCK = threading.Lock()
 

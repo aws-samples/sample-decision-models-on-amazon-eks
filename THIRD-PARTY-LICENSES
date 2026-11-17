@@ -4,15 +4,15 @@ and each is used under its own license.
 
 1. Container image (Dockerfile, built in your AWS account by AWS CodeBuild)
 
-Base image: python:3.12.15-slim from public.ecr.aws/docker/library/python, pinned by digest. Python is under the
+Base image: python:3.12.16-slim from public.ecr.aws/docker/library/python, pinned by digest. Python is under the
 PSF License Agreement (https://docs.python.org/3/license.html) and pip (which the Dockerfile upgrades to 26.2.2,
-uses to install the packages, then removes) under the MIT License; the Debian packages in the image are under their
-own licenses (https://www.debian.org/legal/licenses/).
+uses to install the packages, then removes) under the MIT License; the Debian packages in the image, including the
+security updates the build installs, are under their own licenses (https://www.debian.org/legal/licenses/).
 
-Python packages that the Dockerfile installs: torch 2.14.1 (CPU build), strands-decider 0.2.0, transformers
-5.20.2, strands-agents 1.62.0, mcp 1.30.0 and boto3, with the dependencies they resolved to on 25 October 2026
-(Python 3.12). Dependency versions can differ when you build. To list them for your own image, run
-pip-licenses --with-urls inside it.
+Python packages that the Dockerfile installs for the CPU image: torch 2.14.1 (CPU build), strands-decider 0.3.0,
+transformers 5.20.2, strands-agents 1.62.0, mcp 1.30.0 and boto3, with the dependencies they resolved to on
+11 November 2026 (Python 3.12). Dependency versions can differ when you build. To list them for your own image,
+run pip-licenses --with-urls inside it.
 
 Each entry gives the package, its version, its license as declared in the package metadata, and its URL.
 
@@ -20,7 +20,7 @@ accelerate 1.15.0
   License: Apache Software License
   https://github.com/huggingface/accelerate
 
-annotated-doc 0.0.5
+annotated-doc 0.0.6
   License: MIT
   https://github.com/fastapi/annotated-doc
 
@@ -28,19 +28,19 @@ annotated-types 0.8.0
   License: MIT
   https://github.com/annotated-types/annotated-types
 
-anyio 4.15.1
+anyio 4.16.0
   License: MIT
-  https://anyio.readthedocs.io/en/stable/versionhistory.html
+  https://anyio.readthedocs.io/en/latest/
 
 attrs 26.1.0
   License: MIT
-  https://www.attrs.org/en/stable/changelog.html
+  https://www.attrs.org/
 
-boto3 1.43.118
+boto3 1.44.0
   License: Apache-2.0
   https://github.com/boto/boto3
 
-botocore 1.43.118
+botocore 1.44.0
   License: Apache-2.0
   https://github.com/boto/botocore
 
@@ -50,43 +50,43 @@ certifi 2026.10.23
 
 cffi 2.1.1
   License: MIT-0
-  https://cffi.readthedocs.io/en/latest/whatsnew.html
+  https://cffi.readthedocs.io/
 
-click 8.5.0
+click 8.5.1
   License: BSD-3-Clause
-  https://github.com/pallets/click/
+  https://click.palletsprojects.com/
 
 cryptography 50.0.2
   License: Apache-2.0 OR BSD-3-Clause
-  https://github.com/pyca/cryptography
+  https://cryptography.io/
 
 docstring_parser 0.18.0
   License: MIT License
   https://github.com/rr-/docstring_parser
 
-fastapi 0.162.0
+fastapi 0.162.4
   License: MIT
   https://github.com/fastapi/fastapi
 
-filelock 4.2.4
+filelock 4.2.10
   License: MIT
-  https://github.com/tox-dev/py-filelock
+  https://py-filelock.readthedocs.io
 
 fsspec 2026.9.0
   License: BSD-3-Clause
-  https://github.com/fsspec/filesystem_spec
+  https://filesystem-spec.readthedocs.io/en/latest/
 
 h11 0.16.0
   License: MIT License
   https://github.com/python-hyper/h11
 
-hf-xet 1.7.0
+hf-xet 1.8.0
   License: Apache-2.0
-  https://github.com/huggingface/xet-core
+  https://huggingface.co/docs/hub/xet/index
 
 httpcore 1.0.9
   License: BSD-3-Clause
-  https://www.encode.io/httpcore/
+  https://www.encode.io/httpcore
 
 httpcore2 2.16.0
   License: BSD-3-Clause
@@ -98,7 +98,7 @@ httptools 0.9.0
 
 httpx 0.28.1
   License: BSD License
-  https://github.com/encode/httpx
+  https://www.python-httpx.org
 
 httpx-sse 0.4.3
   License: MIT
@@ -108,7 +108,7 @@ httpx2 2.16.0
   License: BSD-3-Clause
   https://github.com/pydantic/httpx2
 
-huggingface_hub 2.3.0
+huggingface_hub 2.4.0
   License: Apache Software License
   https://github.com/huggingface/huggingface_hub
 
@@ -118,7 +118,7 @@ idna 3.20
 
 Jinja2 3.1.6
   License: BSD License
-  https://github.com/pallets/jinja/
+  https://jinja.palletsprojects.com/
 
 jmespath 1.1.0
   License: MIT License
@@ -130,15 +130,15 @@ jsonschema 4.26.0
 
 jsonschema-specifications 2025.9.1
   License: MIT
-  https://github.com/python-jsonschema/jsonschema-specifications
+  https://jsonschema-specifications.readthedocs.io/
 
-markdown-it-py 4.2.0
+markdown-it-py 4.3.0
   License: MIT License
-  https://github.com/executablebooks/markdown-it-py
+  https://markdown-it-py.readthedocs.io
 
 MarkupSafe 3.0.4
   License: BSD-3-Clause
-  https://github.com/pallets/markupsafe/
+  https://markupsafe.palletsprojects.com/
 
 mcp 1.30.0
   License: MIT License
@@ -160,29 +160,29 @@ numpy 2.5.4
   License: BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0
   https://numpy.org
 
-opentelemetry-api 1.45.1
+opentelemetry-api 1.45.2
   License: Apache-2.0
   https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api
 
-opentelemetry-instrumentation 0.66b1
+opentelemetry-instrumentation 0.66b2
   License: Apache-2.0
   https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/opentelemetry-instrumentation
 
-opentelemetry-instrumentation-threading 0.66b1
+opentelemetry-instrumentation-threading 0.66b2
   License: Apache-2.0
   https://github.com/open-telemetry/opentelemetry-python-contrib/instrumentation/opentelemetry-instrumentation-threading
 
-opentelemetry-sdk 1.45.1
+opentelemetry-sdk 1.45.2
   License: Apache-2.0
   https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-sdk
 
-opentelemetry-semantic-conventions 0.66b1
+opentelemetry-semantic-conventions 0.66b2
   License: Apache-2.0
   https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-semantic-conventions
 
 packaging 26.3
   License: Apache-2.0 OR BSD-2-Clause
-  https://github.com/pypa/packaging
+  https://packaging.pypa.io/
 
 peft 0.21.2
   License: Apache Software License
@@ -196,17 +196,17 @@ pycparser 3.12
   License: BSD-3-Clause
   https://github.com/eliben/pycparser
 
-pydantic 2.14.1
+pydantic 2.14.3
   License: MIT
   https://github.com/pydantic/pydantic
 
-pydantic-settings 2.16.1
+pydantic-settings 2.16.2
   License: MIT
   https://github.com/pydantic/pydantic-settings
 
-pydantic_core 2.50.1
+pydantic_core 2.50.4
   License: MIT
-  https://github.com/pydantic
+  https://github.com/pydantic/pydantic
 
 Pygments 2.21.0
   License: BSD-2-Clause
@@ -217,14 +217,14 @@ PyJWT 2.15.1
   https://github.com/jpadilla/pyjwt
 
 python-dateutil 2.9.0.post0
-  License: Apache Software License; BSD License
+  License: BSD License OR Apache Software License
   https://github.com/dateutil/dateutil
 
 python-dotenv 1.2.4
   License: BSD-3-Clause
   https://github.com/theskumar/python-dotenv
 
-python-multipart 0.0.32
+python-multipart 0.0.33
   License: Apache-2.0
   https://github.com/Kludex/python-multipart
 
@@ -234,19 +234,19 @@ PyYAML 6.0.3
 
 referencing 0.37.0
   License: MIT
-  https://github.com/python-jsonschema/referencing
+  https://referencing.readthedocs.io/
 
-regex 2026.9.29
+regex 2026.11.9
   License: Apache-2.0 AND CNRI-Python
   https://github.com/mrabarnett/mrab-regex
 
 rich 15.0.0
   License: MIT License
-  https://github.com/Textualize/rich
+  https://rich.readthedocs.io/en/latest/
 
 rpds-py 2026.9.1
   License: MIT
-  https://github.com/crate-py/rpds
+  https://rpds.readthedocs.io/
 
 s3transfer 0.19.3
   License: Apache Software License
@@ -268,7 +268,7 @@ six 1.17.0
   License: MIT License
   https://github.com/benjaminp/six
 
-sse-starlette 3.5.1
+sse-starlette 3.7.0
   License: BSD-3-Clause
   https://github.com/sysid/sse-starlette
 
@@ -280,9 +280,8 @@ strands-agents 1.62.0
   License: Apache Software License
   https://github.com/strands-agents/harness-sdk
 
-strands-decider 0.2.0
+strands-decider 0.3.0
   License: Apache-2.0
-  https://github.com/strands-labs/strands-decider
 
 sympy 1.14.0
   License: BSD License
@@ -292,7 +291,7 @@ tokenizers 0.23.3
   License: Apache Software License
   https://github.com/huggingface/tokenizers
 
-torch 2.14.1
+torch 2.14.1+cpu
   License: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT
   https://pytorch.org
 
@@ -306,31 +305,30 @@ transformers 5.20.2
 
 truststore 0.10.5
   License: MIT
-  https://github.com/sethmlarson/truststore
+  https://truststore.readthedocs.io
 
-typer 0.27.3
+typer 0.29.1
   License: MIT
   https://github.com/fastapi/typer
 
-typing-inspection 0.4.4
+typing-inspection 0.4.5
   License: MIT
   https://github.com/pydantic/typing-inspection
 
 typing_extensions 4.16.0
   License: PSF-2.0
-  https://github.com/python/typing_extensions
+  https://typing-extensions.readthedocs.io/
 
 urllib3 2.8.0
   License: MIT
-  https://github.com/urllib3/urllib3/blob/main/CHANGES.rst
+  https://urllib3.readthedocs.io
 
 uvicorn 0.54.0
   License: BSD-3-Clause
   https://uvicorn.dev/
 
 uvloop 0.23.0
-  License: Apache Software License; MIT License
-  https://github.com/MagicStack/uvloop
+  License: Apache Software License OR MIT License
 
 watchdog 6.0.0
   License: Apache Software License
@@ -340,13 +338,118 @@ watchfiles 1.3.0
   License: MIT License
   https://github.com/samuelcolvin/watchfiles
 
-websockets 17.3
+websockets 17.4
   License: BSD-3-Clause
   https://github.com/python-websockets/websockets
 
-wrapt 2.5.1
+wrapt 2.5.2
   License: BSD-2-Clause
   https://github.com/GrahamDumpleton/wrapt
+
+1a. Optional GPU image (./quickstart.sh image gpu, TORCH_VARIANT=cuda)
+
+The same Dockerfile on x86_64 installs torch 2.14.1 (CUDA build) from PyPI with the NVIDIA CUDA runtime libraries it
+depends on, flash-linear-attention 0.6.0 (strands-decider[cuda]) and Triton, plus the Debian packages gcc and
+libc6-dev (Triton compiles a small launcher at run time). The NVIDIA libraries (nvidia-*, cuda-toolkit) are
+proprietary NVIDIA software under the NVIDIA Software License Agreement and the CUDA Toolkit End User License
+Agreement (https://docs.nvidia.com/cuda/eula/). This sample doesn't include or redistribute them: your CodeBuild
+project downloads them from PyPI when you build the GPU image, and you use them under NVIDIA's terms. The NVIDIA
+driver on GPU nodes is installed and managed by Amazon EKS Auto Mode.
+
+Packages in the GPU image that are not in the CPU image, or have a different version there (resolved on
+11 November 2026):
+
+cuda-bindings 13.5.0
+  License: Apache-2.0
+  https://github.com/NVIDIA/cuda-python
+
+cuda-pathfinder 1.8.6
+  License: Apache-2.0
+  https://github.com/NVIDIA/cuda-python
+
+cuda-toolkit 13.0.3.0
+  License: NVIDIA CUDA Toolkit End User License Agreement
+  https://developer.nvidia.com/cuda-toolkit
+
+einops 0.8.2
+  License: MIT License
+  https://github.com/arogozhnikov/einops
+
+fla-core 0.6.0
+  License: MIT License
+  https://github.com/fla-org/flash-linear-attention
+
+flash-linear-attention 0.6.0
+  License: MIT License
+  https://github.com/fla-org/flash-linear-attention
+
+nvidia-cublas 13.1.1.3
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cuda-cupti 13.0.85
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cuda-nvrtc 13.0.88
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cuda-runtime 13.0.96
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cudnn-cu13 9.24.0.43
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cufft 12.0.0.61
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cufile 1.15.1.6
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-curand 10.4.0.35
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cusolver 12.0.4.66
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cusparse 12.6.3.3
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-cusparselt-cu13 0.8.1
+  License: NVIDIA Proprietary Software
+  https://developer.nvidia.com/cusparselt
+
+nvidia-nccl-cu13 2.30.7
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-nvjitlink 13.5.37
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-nvshmem-cu13 3.4.5
+  License: LicenseRef-NVIDIA-Proprietary
+  https://developer.nvidia.com/cuda-zone
+
+nvidia-nvtx 13.0.85
+  License: Other/Proprietary License
+  https://developer.nvidia.com/cuda-zone
+
+torch 2.14.1
+  License: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT
+  https://pytorch.org
+
+triton 3.8.0
+  License: MIT
+  https://github.com/triton-lang/triton/
 
 2. Model weights (copied from the Hugging Face Hub into your S3 bucket by the "weights" CodeBuild job)
 

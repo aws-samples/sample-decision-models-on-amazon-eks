@@ -1,6 +1,7 @@
 # Strands Decider Deployment, PodDisruptionBudget and Service. Rendered by render.py (string.Template placeholders).
 # One process per pod, one request at a time per pod (the app serialises requests: overlapping forwards
 # fight for the same cores), so throughput comes from pods, and threads per pod decide latency.
+# CPU variants run on the arm64 Graviton pools; the gpu variant runs on the amd64 NVIDIA pool with one GPU per pod.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,9 +24,9 @@ spec:
       serviceAccountName: decider
       # The server never calls the Kubernetes API. EKS Pod Identity mounts its own token for AWS access.
       automountServiceAccountToken: false
-      nodeSelector: {decider/pool: "${POOL}", kubernetes.io/arch: arm64}
+      nodeSelector: {decider/pool: "${POOL}", kubernetes.io/arch: ${ARCH}}
       tolerations:
-        - {key: decider, operator: Equal, value: "true", effect: NoSchedule}
+        - {key: decider, operator: Equal, value: "true", effect: NoSchedule}${GPU_TOLERATION}
       # Room for the preStop sleep below, then for the request in flight to finish.
       terminationGracePeriodSeconds: 60
       # Run as the image's non-root user.
@@ -50,6 +51,7 @@ spec:
             - {name: WEIGHTS_S3_URI, value: "${WEIGHTS_S3_URI}"}
             - {name: MODEL_NAME, value: "${MODEL_NAME}"}
             - {name: MODEL_DIR, value: /opt/model}
+            - {name: DECIDER_DEVICE, value: "${DEVICE}"}
             - {name: DECIDER_CPU_DTYPE, value: "${DTYPE}"}
             - {name: DECIDER_THREADS, value: "${THREADS}"}
             - {name: OMP_NUM_THREADS, value: "${THREADS}"}
@@ -62,8 +64,8 @@ spec:
           # No CPU limit, so torch threads are never throttled by the CFS quota; the request reserves
           # the cores. The memory limit protects the node (fp32 peaks at about 9.2 GB).
           resources:
-            requests: {cpu: "${CPU}", memory: "${MEM_REQUEST}"}
-            limits: {memory: "${MEM_LIMIT}"}
+            requests: {cpu: "${CPU}", memory: "${MEM_REQUEST}"${GPU_REQUEST}}
+            limits: {memory: "${MEM_LIMIT}"${GPU_REQUEST}}
           # The port opens only once the model has loaded. After that, check just the port: /ping shares
           # the server's thread pool with requests waiting for the lock, so a busy pod can answer it late,
           # and taking that pod out of the Service, or restarting it, would only lose work.

@@ -8,9 +8,9 @@
 #   preflight   check tools, credentials, and that the instance types exist in REGION
 #   bootstrap   S3 bucket, ECR repo, arm64 CodeBuild project (CloudFormation stack <NAME>-bootstrap)
 #   weights     CodeBuild: download the model from the Hugging Face Hub, stage it to s3://<bucket>/model/
-#   image       CodeBuild: build the arm64 image, push it to ECR
+#   image       CodeBuild: build the arm64 CPU image, push it to ECR ("image gpu": the optional x86_64 GPU image)
 #   cluster     EKS Auto Mode cluster (eksctl, about 15 min) + free S3 gateway endpoint
-#   deploy      NodePools, the Decider (VARIANT), the bench pod; waits until ready
+#   deploy      NodePools, the Decider (VARIANT, or "deploy <variant>"), the bench pod; waits until ready
 #   test        routing-100 accuracy and latency, then a short concurrency sweep, from inside the cluster
 #   agent       deploy the example triage agent (decision model first, Amazon Bedrock below the threshold)
 #   threshold   score labeled messages to choose CONFIDENCE_THRESHOLD: threshold [file.jsonl] (default: routing-100)
@@ -26,23 +26,37 @@ set -euo pipefail
 cd "$(dirname "$0")"
 case "${1:-help}" in up|preflight|bootstrap|weights|image|cluster|deploy|test|agent|threshold|env|expose|scale|autoscale|status|down) ;; *) sed -n '2,23p' "$0"; exit 0 ;; esac
 [ -f config.env ] || { echo "Copy config.example.env to config.env and edit it first."; exit 1; }
-set -a; source config.env; set +a
+set -a
+# config.env is the user's own file (copied from config.example.env).
+# shellcheck source=/dev/null
+source config.env
+set +a
 export AWS_REGION="$REGION" AWS_DEFAULT_REGION="$REGION"
 [ -n "${PROFILE:-}" ] && export AWS_PROFILE="$PROFILE"
 export CLUSTER="${NAME}-eks" STACK="${NAME}-bootstrap" KUBECONFIG="$PWD/.kubeconfig-${NAME}"
 export ESCALATION_MODEL_ID="${ESCALATION_MODEL_ID:-eu.amazon.nova-2-lite-v1:0}" CONFIDENCE_THRESHOLD="${CONFIDENCE_THRESHOLD:-0.7}"
+export INSTANCE_GPU="${INSTANCE_GPU:-}"
 mkdir -p results
 
 say() { printf '\n== %s\n' "$*"; }
 out() { aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text; }
 load_stack() {
-  export BUCKET=$(out BucketName) LOG_BUCKET=$(out LogBucketName) REPO_URI=$(out RepositoryUri) REPO_NAME=$(out RepositoryName)
-  export PROJECT=$(out ProjectName) KEY_ARN=$(out KeyArn)
-  # Pods pull the most recently pushed image by digest (tags are immutable; every build gets a new one).
-  local digest
-  digest=$(aws ecr describe-images --repository-name "$REPO_NAME" --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageDigest' \
-           --output text 2>/dev/null || true)
-  if [ -n "$digest" ] && [ "$digest" != "None" ]; then export IMAGE_URI="$REPO_URI@$digest"; else export IMAGE_URI=""; fi
+  BUCKET=$(out BucketName); LOG_BUCKET=$(out LogBucketName); REPO_URI=$(out RepositoryUri); REPO_NAME=$(out RepositoryName)
+  PROJECT=$(out ProjectName); KEY_ARN=$(out KeyArn)
+  export BUCKET LOG_BUCKET REPO_URI REPO_NAME PROJECT KEY_ARN
+  # Pods pull the most recently pushed image of each kind by digest (tags are immutable; every build gets a new
+  # one, cpu-<time> or gpu-<time>).
+  IMAGE_URI=$(image_uri cpu); GPU_IMAGE_URI=$(image_uri gpu)
+  export IMAGE_URI GPU_IMAGE_URI
+}
+
+image_uri() {  # $1 = cpu or gpu: the repository URI @ the digest of the newest image with that tag prefix, or empty
+  local digest filter="starts_with(imageTags[0], '$1-')"
+  # Images built before the cpu-/gpu- prefixes (tag = the build time) are CPU images.
+  [ "$1" = "cpu" ] && filter="$filter || !starts_with(imageTags[0], 'gpu-')"
+  digest=$(aws ecr describe-images --repository-name "$REPO_NAME" --output text \
+    --query "sort_by(imageDetails[?imageTags && ($filter)], &imagePushedAt)[-1].imageDigest" 2>/dev/null || true)
+  if [ -n "$digest" ] && [ "$digest" != "None" ]; then echo "$REPO_URI@$digest"; fi
 }
 
 empty_bucket() {  # $1 = bucket: delete every object version and delete marker (the buckets are versioned)
@@ -51,13 +65,17 @@ empty_bucket() {  # $1 = bucket: delete every object version and delete marker (
     batch=$(aws s3api list-object-versions --bucket "$1" --max-items 1000 --output json \
             --query '{Objects: [Versions[].{Key: Key, VersionId: VersionId}, DeleteMarkers[].{Key: Key, VersionId: VersionId}][][]}')
     [ "$(printf '%s' "$batch" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["Objects"] or []))')" = "0" ] && break
+    # The backticks are a JMESPath literal, not a shell expansion.
+    # shellcheck disable=SC2016
     aws s3api delete-objects --bucket "$1" --delete "$batch" --output text --query 'length(Errors || `[]`)' >/dev/null
   done
 }
 
-vcpus() {  # export VCPU_LARGE / VCPU_SMALL for the configured instance types
-  export VCPU_LARGE=$(aws ec2 describe-instance-types --instance-types "$INSTANCE_LARGE" --query 'InstanceTypes[0].VCpuInfo.DefaultVCpus' --output text)
-  export VCPU_SMALL=$(aws ec2 describe-instance-types --instance-types "$INSTANCE_SMALL" --query 'InstanceTypes[0].VCpuInfo.DefaultVCpus' --output text)
+vcpu_of() { aws ec2 describe-instance-types --instance-types "$1" --query 'InstanceTypes[0].VCpuInfo.DefaultVCpus' --output text; }
+vcpus() {  # export VCPU_LARGE / VCPU_SMALL (and VCPU_GPU) for the configured instance types
+  VCPU_LARGE=$(vcpu_of "$INSTANCE_LARGE"); VCPU_SMALL=$(vcpu_of "$INSTANCE_SMALL")
+  export VCPU_LARGE VCPU_SMALL
+  if [ -n "$INSTANCE_GPU" ]; then VCPU_GPU=$(vcpu_of "$INSTANCE_GPU"); export VCPU_GPU; fi
 }
 
 cmd_preflight() {
@@ -65,7 +83,7 @@ cmd_preflight() {
   for t in aws eksctl kubectl python3 zip curl; do command -v "$t" >/dev/null || { echo "missing: $t"; exit 1; }; done
   aws sts get-caller-identity --query Arn --output text
   local it n
-  for it in "$INSTANCE_LARGE" "$INSTANCE_SMALL" "$INSTANCE_BENCH"; do
+  for it in "$INSTANCE_LARGE" "$INSTANCE_SMALL" "$INSTANCE_BENCH" ${INSTANCE_GPU:+"$INSTANCE_GPU"}; do
     n=$(aws ec2 describe-instance-type-offerings --location-type region --filters Name=instance-type,Values="$it" \
           --query 'length(InstanceTypeOfferings)' --output text)
     [ "$n" = "1" ] || { echo "$it is not offered in $REGION: change INSTANCE_* in config.env"; exit 1; }
@@ -73,17 +91,25 @@ cmd_preflight() {
   done
 }
 
-codebuild() {  # $1 = JOB (weights|image)
+codebuild() {  # $1 = JOB (weights|image), $2 = TORCH_VARIANT for the image (cpu, the default, or cuda)
   load_stack
+  local variant="${2:-cpu}" tag="cpu"
+  local -a env_override=()
+  if [ "$variant" = "cuda" ]; then
+    # GPU instances are x86_64: build this image on x86_64 instead of the project's default arm64.
+    tag="gpu"
+    env_override=(--environment-type-override LINUX_CONTAINER --compute-type-override BUILD_GENERAL1_LARGE
+                  --image-override aws/codebuild/amazonlinux-x86_64-standard:5.0 --privileged-mode-override)
+  fi
   rm -f /tmp/qs-eks.zip
   zip -qr /tmp/qs-eks.zip . -x 'config.env' '.kubeconfig*' 'results/*' '*__pycache__*' '.git*'
   aws s3 cp /tmp/qs-eks.zip "s3://$BUCKET/source/eks.zip" --only-show-errors
   local id
-  id=$(aws codebuild start-build --project-name "$PROJECT" \
+  id=$(aws codebuild start-build --project-name "$PROJECT" ${env_override[@]+"${env_override[@]}"} \
         --environment-variables-override name=JOB,value="$1" name=MODEL_ID,value="$MODEL_ID" \
-          name=BASE_MODEL_ID,value="$BASE_MODEL_ID" name=IMAGE_TAG,value="$(date -u +%Y%m%d-%H%M%S)" \
+          name=BASE_MODEL_ID,value="$BASE_MODEL_ID" name=IMAGE_TAG,value="$tag-$(date -u +%Y%m%d-%H%M%S)" \
           name=MODEL_REVISION,value="${MODEL_REVISION:-}" name=BASE_MODEL_REVISION,value="${BASE_MODEL_REVISION:-}" \
-          name=DECIDER_VERSION,value="$DECIDER_VERSION" \
+          name=DECIDER_VERSION,value="$DECIDER_VERSION" name=TORCH_VARIANT,value="$variant" \
         --query build.id --output text)
   echo "CodeBuild $1: $id"
   local st=IN_PROGRESS
@@ -103,7 +129,13 @@ cmd_bootstrap() {
   load_stack; echo "bucket $BUCKET, repo $REPO_URI, project $PROJECT"
 }
 cmd_weights() { say "weights: $MODEL_ID + $BASE_MODEL_ID -> S3"; codebuild weights; }
-cmd_image()   { say "image: build and push"; codebuild image; load_stack; echo "image $IMAGE_URI"; }
+cmd_image() {
+  if [ "${1:-cpu}" = "gpu" ]; then
+    say "image: build and push the GPU image (x86_64, CUDA)"; codebuild image cuda; load_stack; echo "gpu image $GPU_IMAGE_URI"
+  else
+    say "image: build and push"; codebuild image; load_stack; echo "image $IMAGE_URI"
+  fi
+}
 
 cmd_cluster() {
   load_stack
@@ -134,14 +166,21 @@ cmd_cluster() {
 
 cmd_deploy() {
   load_stack
+  VARIANT="${1:-$VARIANT}"
   say "deploy: $VARIANT"
+  case "$VARIANT" in gpu-*)
+    [ -n "$INSTANCE_GPU" ] || { echo "set INSTANCE_GPU in config.env for the gpu variant"; exit 1; }
+    [ -n "$GPU_IMAGE_URI" ] || { echo "no GPU image yet: run ./quickstart.sh image gpu"; exit 1; } ;;
+  esac
   vcpus
   python3 render.py nodepools | kubectl apply -f -
   kubectl -n decider scale deploy/decider --replicas=0 >/dev/null 2>&1 || true
   kubectl -n decider wait --for=delete pod -l app=decider --timeout=300s >/dev/null 2>&1 || true
   python3 render.py decider --variant "$VARIANT" | kubectl apply -f -
   kubectl -n decider get pod bench >/dev/null 2>&1 || python3 render.py bench | kubectl apply -f -
-  kubectl -n decider rollout status deploy/decider --timeout=900s
+  # A GPU node also pulls a much larger image and compiles Triton kernels at start.
+  case "$VARIANT" in gpu-*) t=1800s ;; *) t=900s ;; esac
+  kubectl -n decider rollout status deploy/decider --timeout="$t"
   kubectl -n decider wait --for=condition=Ready pod/bench --timeout=600s
   kubectl -n decider get pods -o wide
 }
@@ -169,7 +208,7 @@ cmd_expose() {
   echo "accepting connections from $NLB_CIDRS only"
   python3 render.py nlb | kubectl apply -f -
   local h=""
-  for i in $(seq 1 60); do
+  for _ in $(seq 1 60); do
     h=$(kubectl -n decider get svc decider-nlb -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
     [ -n "$h" ] && break; sleep 5
   done
@@ -228,7 +267,11 @@ cmd_down() {
     aws cloudformation wait stack-delete-complete --stack-name "$STACK"
   fi
 }
-cmd_up() { cmd_preflight; cmd_bootstrap; cmd_weights; cmd_image; cmd_cluster; cmd_deploy; cmd_test; }
+cmd_up() {
+  cmd_preflight; cmd_bootstrap; cmd_weights; cmd_image
+  case "$VARIANT" in gpu-*) cmd_image gpu ;; esac
+  cmd_cluster; cmd_deploy; cmd_test
+}
 
 c=${1:-help}; shift || true
 case "$c" in

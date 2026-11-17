@@ -1,7 +1,7 @@
-# Runs in the quickstart's arm64 CodeBuild project. Two jobs, chosen by JOB:
+# Runs in the quickstart's CodeBuild project (arm64; quickstart.sh switches to x86_64 for the GPU image). Two jobs, chosen by JOB:
 #   JOB=weights  download MODEL_ID and BASE_MODEL_ID from the Hugging Face Hub, point the Decider config at
 #                the local base model, upload both folders to s3://$BUCKET/model/ (no laptop download)
-#   JOB=image    build the arm64 image from this folder and push it to $REPO_URI:$IMAGE_TAG
+#   JOB=image    build the image from this folder (TORCH_VARIANT=cpu or cuda) and push it to $REPO_URI:$IMAGE_TAG
 version: 0.2
 phases:
   install:
@@ -18,7 +18,8 @@ phases:
         elif [ "$JOB" = "image" ]; then
           REG=$(echo $REPO_URI | cut -d/ -f1)
           aws ecr get-login-password | docker login --username AWS --password-stdin $REG
-          docker build --build-arg DECIDER_VERSION=${DECIDER_VERSION:-0.2.0} -t $REPO_URI:${IMAGE_TAG:-latest} .
+          docker build --build-arg DECIDER_VERSION=${DECIDER_VERSION:-0.3.0} \
+            --build-arg TORCH_VARIANT=${TORCH_VARIANT:-cpu} -t $REPO_URI:${IMAGE_TAG:-latest} .
           docker push $REPO_URI:${IMAGE_TAG:-latest}
         else
           echo "set JOB=weights or JOB=image"; exit 1

@@ -96,7 +96,16 @@ def escalate(message: str) -> Route:
 
 def triage(message: str) -> dict:
     t = time.perf_counter()
-    out = decide(message)
+    try:
+        out = decide(message)
+    except RuntimeError as exc:
+        # 422: the message doesn't fit the decision model's context window, so the foundation model decides.
+        if not str(exc).startswith("HTTP 422"):
+            raise
+        r = escalate(message)
+        return {"team": r.team, "reason": r.reason, "decided_by": f"bedrock:{ESCALATION_MODEL_ID}",
+                "decision_model_error": "too long for the decision model", "threshold": THRESHOLD,
+                "ms": round((time.perf_counter() - t) * 1000)}
     route = out["answers"]["route"]
     result = {
         "team": route["choice"],
