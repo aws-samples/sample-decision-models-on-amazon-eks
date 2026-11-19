@@ -81,12 +81,19 @@ Latency percentiles, in ms, over 100 requests sent one at a time:
   [aws-ebpf-sdk-go#176](https://github.com/aws/aws-ebpf-sdk-go/pull/176)). Until an EKS Auto Mode node release
   picks them up, test that case in your own cluster before you add policies.
 - **Scans.** semgrep, bandit, checkov (CloudFormation, Dockerfile and the rendered Kubernetes manifests, GPU ones
-  included), cfn_nag, cfn-guard (Well-Architected security rules), shellcheck, git-secrets, detect-secrets and
-  Trivy report no findings, and pip-audit finds no known vulnerabilities in the Python packages of either image
-  (17 Nov 2026). Every suppression has its reason next to it: `ecr:GetAuthorizationToken` needs `Resource: "*"`;
-  the access-log bucket doesn't log to itself; the bucket policies deny non-TLS requests per bucket rather than
-  with `Resource: "*"`; the build role's policy is inline; the decision model has no CPU limit and no liveness
-  probe by design; the bench pod has no probes; and there are no NetworkPolicies (see above).
+  included), cfn_nag, cfn-guard (Well-Architected security rules), cfn-lint, shellcheck, git-secrets, gitleaks,
+  detect-secrets and ASH report no findings in the code, and pip-audit finds no known vulnerabilities in the Python
+  packages of either image (19 Nov 2026). Every suppression has its reason next to it: `ecr:GetAuthorizationToken`
+  needs `Resource: "*"`; the access-log bucket doesn't log to itself; the bucket policies deny non-TLS requests per
+  bucket rather than with `Resource: "*"`; the build role's policy is inline; the decision model has no CPU limit and
+  no liveness probe by design; the bench pod has no probes; and there are no NetworkPolicies (see above).
+- **Known findings in the base image.** The images start from the Debian 13 `python:3.12-slim` image, and the build
+  installs every Debian security update available at that moment. When we built them (19 Nov 2026), Trivy still
+  reported HIGH findings with no fixed version released, in sqlite, util-linux, ncurses, systemd libraries, acl,
+  perl-base and glibc. None of these components is used by the server, and the pods run as non-root with a read-only
+  root filesystem, no privilege escalation, no Linux capabilities and seccomp `RuntimeDefault`. Debian publishes
+  fixes over time, so rebuild the images regularly (`./quickstart.sh image`, and `image gpu` if you use it) and scan
+  what you deploy, for example with `trivy image <your image>` or Amazon Inspector on the ECR repository.
 
 ## Prerequisites
 - AWS CLI, eksctl 0.231 or later, kubectl 1.35 or later, Python 3.11+ (standard library only), `zip` and `curl`.
