@@ -350,7 +350,9 @@ wrapt 2.5.2
 
 The same Dockerfile on x86_64 installs torch 2.14.1 (CUDA build) from PyPI with the NVIDIA CUDA runtime libraries it
 depends on, flash-linear-attention 0.6.0 (strands-decider[cuda]) and Triton, plus the Debian packages gcc and
-libc6-dev (Triton compiles a small launcher at run time). The NVIDIA libraries (nvidia-*, cuda-toolkit) are
+libc6-dev (Triton compiles a small launcher at run time). gcc and its toolchain (cpp, binutils) are under the GNU GPL
+version 3 or later, with the GCC Runtime Library Exception for the runtime libraries; libc6-dev is part of glibc (GNU
+LGPL 2.1 or later); linux-libc-dev (kernel header files) is under the GNU GPL version 2 with the Linux syscall note. The NVIDIA libraries (nvidia-*, cuda-toolkit) are
 proprietary NVIDIA software under the NVIDIA Software License Agreement and the CUDA Toolkit End User License
 Agreement (https://docs.nvidia.com/cuda/eula/). This sample doesn't include or redistribute them: your CodeBuild
 project downloads them from PyPI when you build the GPU image, and you use them under NVIDIA's terms. The NVIDIA

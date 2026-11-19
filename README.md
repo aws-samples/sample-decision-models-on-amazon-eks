@@ -89,12 +89,15 @@ Latency percentiles, in ms, over 100 requests sent one at a time:
   bucket objects and log streams; the decision model has no CPU limit and
   no liveness probe by design; the bench pod has no probes; and there are no NetworkPolicies (see above).
 - **Known findings in the base image.** The images start from the Debian 13 `python:3.12-slim` image, and the build
-  installs every Debian security update available at that moment. When we built them (19 Nov 2026), Trivy still
-  reported HIGH findings with no fixed version released, in sqlite, util-linux, ncurses, systemd libraries, acl,
-  perl-base and glibc. None of these components is used by the server, and the pods run as non-root with a read-only
-  root filesystem, no privilege escalation, no Linux capabilities and seccomp `RuntimeDefault`. Debian publishes
-  fixes over time, so rebuild the images regularly (`./quickstart.sh image`, and `image gpu` if you use it) and scan
-  what you deploy, for example with `trivy image <your image>` or Amazon Inspector on the ECR repository.
+  installs every Debian update available at that moment. When we built them (19 Nov 2026), Trivy and Amazon ECR
+  scanning still reported HIGH findings with no fixed version released, in sqlite, util-linux, ncurses, systemd
+  libraries, acl, perl-base and glibc. The GPU image adds gcc (Triton uses it to compile a small launcher when the pod
+  starts) and, with it, Linux kernel header files (`linux-libc-dev`) that carry kernel CVEs; containers run on the
+  node's kernel, not these headers. The server doesn't call the affected functions or programs, and the pods run as
+  non-root with a read-only root filesystem, no privilege escalation, no Linux capabilities and seccomp
+  `RuntimeDefault`. Debian publishes fixes over time, so rebuild the images regularly (`./quickstart.sh image`, and
+  `image gpu` if you use it) and scan what you deploy, for example with `trivy image <your image>` or Amazon Inspector
+  on the ECR repository.
 
 ## Prerequisites
 - AWS CLI, eksctl 0.231 or later, kubectl 1.35 or later, Python 3.11+ (standard library only), `zip` and `curl`.
