@@ -171,6 +171,17 @@ Resources:
         SuppressedRules:
           # One role, one policy that lives and dies with it, scoped to this stack's bucket, key, logs and repository.
           - IAM_NO_INLINE_POLICY_CHECK
+      cdk_nag:
+        rules_to_suppress:
+          - id: AwsSolutions-IAM5
+            reason: ecr:GetAuthorizationToken does not support resource-level permissions, so it needs Resource "*".
+            applies_to: ["Resource::*"]
+          - id: AwsSolutions-IAM5
+            reason: Objects in this stack's own model bucket only (the source zip and the model files).
+            applies_to: ["Resource::<Bucket.Arn>/*"]
+          - id: AwsSolutions-IAM5
+            reason: Log streams in this stack's own CodeBuild log group; CodeBuild names the streams per build.
+            applies_to: ["Resource::<BuildLogs.Arn>:*"]
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
